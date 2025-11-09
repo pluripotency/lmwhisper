@@ -7,12 +7,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
+ALLOWED_WHISPER_MODELS = {"tiny", "base", "small", "medium", "large"}
+
 
 @dataclass(slots=True)
 class WhisperSettings:
-    api_key: str
-    model: str = "whisper-1"
-    base_url: str | None = None
+    model: str = "small"
 
 
 @dataclass(slots=True)
@@ -40,11 +40,14 @@ class AppSettings:
         lmstudio_data = data.get("lmstudio") or {}
         logging_data = data.get("logging") or {}
 
-        whisper = WhisperSettings(
-            api_key=whisper_data["api_key"],
-            model=whisper_data.get("model", "whisper-1"),
-            base_url=whisper_data.get("base_url"),
-        )
+        whisper_model = whisper_data.get("model", "small")
+        if whisper_model not in ALLOWED_WHISPER_MODELS:
+            raise ValueError(
+                "Invalid Whisper model configured. Choose one of: "
+                + ", ".join(sorted(ALLOWED_WHISPER_MODELS))
+            )
+
+        whisper = WhisperSettings(model=whisper_model)
 
         lmstudio = LMStudioSettings(
             base_url=lmstudio_data.get("base_url", "http://localhost:1234/v1"),

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import io
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterable, List, Sequence
@@ -33,56 +32,74 @@ class SpeechToTextClient(ABC):
         """Convert the provided audio chunks to text."""
 
 
-class OpenAIWhisperClient(SpeechToTextClient):
-    """Adapter for the official OpenAI Whisper API."""
+class LocalWhisperClient(SpeechToTextClient):
+    """Adapter for running Whisper locally without the OpenAI API."""
 
-    def __init__(
-        self,
-        api_key: str,
-        *,
-        model: str = "whisper-1",
-        base_url: str | None = None,
-    ) -> None:
+    def __init__(self, *, model: str = "small") -> None:
         try:
-            from openai import OpenAI
+            import whisper
         except ImportError as exc:  # pragma: no cover - optional dependency
             raise RuntimeError(
-                "The 'openai' package is required for the Whisper client."
+                "The 'openai-whisper' package is required for the Whisper client."
             ) from exc
 
-        self._client = OpenAI(api_key=api_key, base_url=base_url)
-        self._model = model
+        from whisper.audio import SAMPLE_RATE
+
+        self._whisper = whisper.load_model(model)
+        self._sample_rate = SAMPLE_RATE
 
     def transcribe(
         self, audio_stream: Iterable[bytes], *, language: str | None = None
     ) -> TranscriptResult:
+        import numpy as np
+
         audio_bytes = b"".join(audio_stream)
         if not audio_bytes:
             return TranscriptResult(text="", segments=())
 
-        buffer = io.BytesIO(audio_bytes)
-        buffer.name = "speech.wav"
+        sample_rate = self._sample_rate
+        if audio_bytes.startswith(b"RIFF"):
+            import io
+            import wave
 
-        response = self._client.audio.transcriptions.create(
-            model=self._model,
-            file=(buffer.name, buffer.read(), "audio/wav"),
-            language=language,
-            response_format="verbose_json",
-        )
+            with wave.open(io.BytesIO(audio_bytes)) as wav_file:
+                sample_width = wav_file.getsampwidth()
+                if sample_width != 2:
+                    raise RuntimeError(
+                        f"Unsupported WAV sample width: {sample_width * 8} bits"
+                    )
+                sample_rate = wav_file.getframerate()
+                frames = wav_file.readframes(wav_file.getnframes())
+            audio_array = np.frombuffer(frames, dtype=np.int16)
+        else:
+            audio_array = np.frombuffer(audio_bytes, dtype=np.int16)
+
+        if audio_array.size == 0:
+            return TranscriptResult(text="", segments=())
+
+        audio = audio_array.astype(np.float32) / 32768.0
+
+        if sample_rate != self._sample_rate:
+            from whisper.audio import resample_audio
+
+            audio = resample_audio(audio, sample_rate, self._sample_rate)
+
+        result = self._whisper.transcribe(audio, language=language, fp16=False)
 
         segments: List[TranscriptSegment] = []
-        for item in response.segments or []:
+        for item in result.get("segments", []):
+            confidence = item.get("avg_logprob")
             segments.append(
                 TranscriptSegment(
                     text=item.get("text", ""),
                     start=item.get("start"),
                     end=item.get("end"),
-                    confidence=item.get("confidence"),
+                    confidence=float(confidence) if confidence is not None else None,
                 )
             )
 
         return TranscriptResult(
-            text=response.text or "",
+            text=result.get("text", ""),
             segments=tuple(segments),
-            language=response.language,
+            language=result.get("language"),
         )

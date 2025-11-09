@@ -1,7 +1,7 @@
 # lmwhisper
 
-Modular command line application that combines OpenAI Whisper for transcription
-with LM Studio for local large language model responses.  Conversation turns are
+Modular command line application that combines the open source Whisper model for
+transcription with LM Studio for local large language model responses.  Conversation turns are
 persisted to TOML files for further processing.
 
 ## Features
@@ -16,12 +16,11 @@ persisted to TOML files for further processing.
 ## Configuration
 
 Create a configuration file based on `config.example.toml` and fill in your
-OpenAI API key and LM Studio settings.
+Whisper model choice and LM Studio settings.
 
 ```toml
 [whisper]
-api_key = "sk-your-key"
-model = "whisper-1"
+model = "small" # tiny, base, small, medium, or large
 
 [lmstudio]
 base_url = "http://localhost:1234/v1"

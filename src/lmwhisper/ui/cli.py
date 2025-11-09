@@ -12,7 +12,7 @@ import typer
 from lmwhisper.core.audio import AudioConfig, FileAudioStream, MicrophoneStream, PyAudioMicrophone
 from lmwhisper.core.conversation import ConversationManager, GenerationConfig, LMStudioClient
 from lmwhisper.core.persistence import ConversationTurn, TomlLogger, TomlLoggerConfig
-from lmwhisper.core.transcription import OpenAIWhisperClient, TranscriptResult
+from lmwhisper.core.transcription import LocalWhisperClient, TranscriptResult
 from lmwhisper.settings import load_settings
 
 
@@ -65,11 +65,7 @@ def chat(
     audio_config = AudioConfig()
     microphone = _resolve_audio_source(audio_file, audio_config)
 
-    whisper = OpenAIWhisperClient(
-        settings.whisper.api_key,
-        model=settings.whisper.model,
-        base_url=settings.whisper.base_url,
-    )
+    whisper = LocalWhisperClient(model=settings.whisper.model)
 
     llm_client = LMStudioClient(
         base_url=settings.lmstudio.base_url,
