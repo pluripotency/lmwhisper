@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -32,7 +32,7 @@ class LoggingSettings:
 class AppSettings:
     whisper: WhisperSettings
     lmstudio: LMStudioSettings
-    logging: LoggingSettings = LoggingSettings()
+    logging: LoggingSettings = field(default_factory=LoggingSettings)
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, Any]) -> "AppSettings":
