@@ -9,11 +9,11 @@ from typing import Sequence
 
 import typer
 
-from ..core.audio import AudioConfig, FileAudioStream, MicrophoneStream, PyAudioMicrophone
-from ..core.conversation import ConversationManager, GenerationConfig, LMStudioClient
-from ..core.persistence import ConversationTurn, TomlLogger, TomlLoggerConfig
-from ..core.transcription import OpenAIWhisperClient, TranscriptResult
-from ..settings import load_settings
+from lmwhisper.core.audio import AudioConfig, FileAudioStream, MicrophoneStream, PyAudioMicrophone
+from lmwhisper.core.conversation import ConversationManager, GenerationConfig, LMStudioClient
+from lmwhisper.core.persistence import ConversationTurn, TomlLogger, TomlLoggerConfig
+from lmwhisper.core.transcription import OpenAIWhisperClient, TranscriptResult
+from lmwhisper.settings import load_settings
 
 
 app = typer.Typer(add_completion=False, help=__doc__)

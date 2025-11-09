@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .ui.cli import run
+from lmwhisper.ui.cli import run
 
 
 def main() -> None:

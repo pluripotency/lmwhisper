@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping, Sequence
 
-from .conversation import Message
+from lmwhisper.core.conversation import Message
 
 
 @dataclass(slots=True)
